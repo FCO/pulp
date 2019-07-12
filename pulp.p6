@@ -1,3 +1,4 @@
+#!env perl6
 use lib ".";
 use Pulp;
 

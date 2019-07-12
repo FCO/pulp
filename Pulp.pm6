@@ -1,4 +1,3 @@
-#!env perl6
 use IO::Glob;
 
 class File {
