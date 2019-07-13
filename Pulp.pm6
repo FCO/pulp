@@ -78,13 +78,18 @@ class PulpRun {
         self.emit: $name, start-task;
         my $res = %!tasks{ $name }.();
 
+        my Promise $p .= new;
+        my $v = $p.vow;
         with $res {
             .map: {
                 #say "saving file '{ .path.relative($*CWD) }'";
-                .content.tap
+                .content.tap:
+                    done => { $v.keep: $_ },
+                    quit => -> $err { $v.break: $err },
             }
         }
         self.emit: $name, finish-task;
+        await $p
     }
 }
 
@@ -96,6 +101,21 @@ multi trait_mod:<is>(Sub $r, Str :$task!) is export {
 
 multi trait_mod:<is>(Sub $r, Bool :$task! where * === True) is export {
     trait_mod:<is>($r, :task($r.name))
+}
+
+multi trait_mod:<is>(Sub $r, Str :$parallel-task!) is export {
+    my @tasks = $r.();
+    $run.add-task: $parallel-task, -> {
+        await do for @tasks -> $task {
+            start {
+                $run.run-task: $task
+            }
+        }
+    }
+}
+
+multi trait_mod:<is>(Sub $r, Bool :$parallel-task! where * === True) is export {
+    trait_mod:<is>($r, :parallel-task($r.name))
 }
 
 multi MAIN(Bool :tasks(:$T)!) is export {
