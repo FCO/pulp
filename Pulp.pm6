@@ -26,15 +26,16 @@ sub mkdir-p(IO::Path $_) {
 
 sub dest(*@paths) is export {
     -> File $file {
-        my $supply = $file.content;
-        for @paths -> $CWD {
-            my $path = $file.path.clone(:$CWD).IO;
-            my $dir  = $path.absolute.IO.relative($*CWD).IO.dirname;
+        my Supply $stream = $file.content;
+        LEAVE $stream.tap;
+        |do for @paths -> $CWD {
+            my $path    = $file.path.clone(:$CWD).IO;
+            my $dir     = $path.absolute.IO.relative($*CWD).IO.dirname;
             mkdir-p $dir.IO unless $dir.IO.d;
-            my $fd   = $path.open: :w;
-            $supply .= do: -> $content { $fd.print: $content }
+            my $fd      = $path.open: :w;
+            $stream    .= do: { $fd.print: $_ }
+            $file.clone: :$path, :content($path.open.Supply)
         }
-        $supply
     }
 }
 
@@ -45,7 +46,6 @@ sub rename(&trans) is export {
 }
 
 my %tasks;
-
 multi trait_mod:<is>(Sub $r, Bool :$task! where * === True) is export {
     %tasks{ $r.name } = $r
 }
@@ -60,8 +60,8 @@ multi MAIN(Bool :tasks(:$T)!) is export {
 multi MAIN(Str $task where %tasks.keys.any) is export {
     with %tasks{ $task }.() {
         .map: {
-            #note "file saved";
-            .tap#: :done{ say "file copied" }
+            say "saving file '{ .path.relative($*CWD) }'";
+            .content.tap
         }
     }
 }
