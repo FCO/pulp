@@ -56,15 +56,27 @@ class Event {
 
 class PulpRun {
     has Callable %!tasks;
+    has          %!list;
     has Supplier $!supplier .= new;
     has Supply   $.events    = $!supplier.Supply;
 
-    method add-task(Str $name, &task) {
+    method add-task(Str $name, &task, :@sub-tasks, :$type) {
         die "Task $name alredy exists" if %!tasks{ $name };
+        my %sub-desc = %!list{ @sub-tasks }:p;
+        %!list{$name} = { :$type, :%sub-desc };
         %!tasks{ $name } = &task
     }
 
     method tasks { %!tasks.keys }
+
+    method task-descriptions(%list = %!list) {
+        do for %list.kv -> $task, % ( :$type, :%sub-desc ) {
+            (
+                "- $task",
+                (|("$type:".indent(3), self.task-descriptions: %sub-desc) with $type)
+            ).join("\n").indent: 3
+        }.join: "\n"
+    }
 
     method task-exists($name) { %!tasks{ $name }:exists }
 
@@ -104,9 +116,9 @@ multi trait_mod:<is>(Sub $r, Bool :$task! where * === True) is export {
 }
 
 multi trait_mod:<is>(Sub $r, Str :$parallel-task!) is export {
-    my @tasks = $r.();
-    $run.add-task: $parallel-task, -> {
-        await do for @tasks -> $task {
+    my @sub-tasks = $r.();
+    $run.add-task: $parallel-task, :type<parallel>, :@sub-tasks, -> {
+        await do for @sub-tasks -> $task {
             start {
                 $run.run-task: $task
             }
@@ -119,9 +131,9 @@ multi trait_mod:<is>(Sub $r, Bool :$parallel-task! where * === True) is export {
 }
 
 multi trait_mod:<is>(Sub $r, Str :$serial-task!) is export {
-    my @tasks = $r.();
-    $run.add-task: $serial-task, -> {
-        do for @tasks -> $task {
+    my @sub-tasks = $r.();
+    $run.add-task: $serial-task, :type<serial>, :@sub-tasks, -> {
+        do for @sub-tasks -> $task {
             $run.run-task: $task
         }
     }
@@ -133,9 +145,7 @@ multi trait_mod:<is>(Sub $r, Bool :$serial-task! where * === True) is export {
 
 multi MAIN(Bool :tasks(:$T)!) is export {
     say "Tasks:";
-    for $run.tasks -> $task {
-        say " - $task"
-    }
+    say $run.task-descriptions.indent: 3
 }
 
 multi MAIN(Str $task where $run.task-exists($task)) is export {
