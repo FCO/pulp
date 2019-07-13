@@ -118,6 +118,19 @@ multi trait_mod:<is>(Sub $r, Bool :$parallel-task! where * === True) is export {
     trait_mod:<is>($r, :parallel-task($r.name))
 }
 
+multi trait_mod:<is>(Sub $r, Str :$serial-task!) is export {
+    my @tasks = $r.();
+    $run.add-task: $serial-task, -> {
+        do for @tasks -> $task {
+            $run.run-task: $task
+        }
+    }
+}
+
+multi trait_mod:<is>(Sub $r, Bool :$serial-task! where * === True) is export {
+    trait_mod:<is>($r, :serial-task($r.name))
+}
+
 multi MAIN(Bool :tasks(:$T)!) is export {
     say "Tasks:";
     for $run.tasks -> $task {
