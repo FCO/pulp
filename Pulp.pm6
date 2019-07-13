@@ -45,6 +45,12 @@ sub rename(&trans) is export {
     }
 }
 
+sub subst($regex, $sub, *%flags) is export {
+    -> File $file {
+        $file.clone: :content($file.content.map: *.subst: $regex, $sub, |%flags)
+    }
+}
+
 enum EventType<start-task finish-task error>;
 
 class Event {

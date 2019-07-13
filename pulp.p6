@@ -10,6 +10,10 @@ sub copy-dest3 is task {
     src("src/*").map(rename(* * 2)).map(dest("dest3"))
 }
 
+sub test-replace is task {
+    src("src/*").map(subst(/\d+/, *², :g)).map(dest("dest4"))
+}
+
 sub test-parallel is parallel-task {
     "copy-dest1-dest2", "copy-dest3"
 }
