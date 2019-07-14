@@ -47,11 +47,7 @@ sub watch-path(*@paths, Str :$task!) is export {
         }
     );
 
-    react {
-        whenever $watches {
-            $run.run-task: $task
-        }
-    }
+    @*watch.push: { :$watches, :$task }
 }
 
 multi trait_mod:<is>(Sub $r, Str :$task!) is export {

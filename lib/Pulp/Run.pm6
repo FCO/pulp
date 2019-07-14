@@ -34,6 +34,7 @@ class Pulp::Run {
     method run-task(Str $name) {
         CATCH { self.emit: $name, error, $_ }
 
+        my @*watch;
         self.emit: $name, start-task;
         my $res = %!tasks{ $name }.();
 
@@ -47,6 +48,15 @@ class Pulp::Run {
                         quit => -> $err { $v.break: $err },
                 } else {
                     $v.keep: $_
+                }
+            }
+        }
+        if @*watch {
+            react {
+                for @*watch -> % ( Supply :$watches, Str :$task ) {
+                    whenever $watches {
+                        self.run-task: $task
+                    }
                 }
             }
         }
