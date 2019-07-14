@@ -25,3 +25,7 @@ sub test-serial is serial-task {
 }
 
 sub default is task { say "DEFAULT" }
+
+sub watch is task {
+    watch-path "src/*", :task<copy-dest3>
+}

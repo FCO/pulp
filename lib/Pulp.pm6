@@ -38,6 +38,22 @@ sub dest(*@paths) is export {
 
 my Pulp::Run $run .= new;
 
+sub watch-path(*@paths, Str :$task!) is export {
+    my $watches = Supply.merge(
+        |do for @paths -> $path {
+            |do for glob($path) {
+                .watch
+            }
+        }
+    );
+
+    react {
+        whenever $watches {
+            $run.run-task: $task
+        }
+    }
+}
+
 multi trait_mod:<is>(Sub $r, Str :$task!) is export {
     $run.add-task: $task, $r
 }
