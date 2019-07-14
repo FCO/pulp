@@ -1,6 +1,8 @@
 #!env perl6
 use lib ".";
 use Pulp;
+use Pulp::Plugin::Subst;
+use Pulp::Plugin::Rename;
 
 sub copy-dest1-dest2 is task {
     src("src/*").map(dest("dest1", "dest2"))
@@ -21,3 +23,5 @@ sub test-parallel is parallel-task {
 sub test-serial is serial-task {
     "copy-dest1-dest2", "copy-dest3"
 }
+
+sub default is task { say "DEFAULT" }
