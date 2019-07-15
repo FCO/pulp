@@ -3,6 +3,7 @@ use lib ".";
 use Pulp;
 use Pulp::Plugin::Subst;
 use Pulp::Plugin::Rename;
+use Pulp::Plugin::JSMinify;
 
 sub copy-dest1-dest2 is task {
     src("src/*").map(dest("dest1", "dest2"))
@@ -28,4 +29,8 @@ sub default is task { say "DEFAULT" }
 
 sub watch is task {
     watch-path "src/*", :task<copy-dest3>
+}
+
+sub minify is task {
+    src("js/*.js").map(js-minify()).map(dest("js.min"))
 }

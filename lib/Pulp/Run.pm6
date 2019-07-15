@@ -1,5 +1,7 @@
 use Pulp::EventType;
 use Pulp::Event;
+use Pulp::File;
+
 
 class Pulp::Run {
     has Callable %!tasks;
@@ -42,7 +44,7 @@ class Pulp::Run {
         my $v = $p.vow;
         with $res {
             .map: {
-                if .^can: "content" {
+                if $_ ~~ Pulp::File {
                     .content.tap:
                         done => { $v.keep: $_ },
                         quit => -> $err { $v.break: $err },

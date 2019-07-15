@@ -24,8 +24,7 @@ sub mkdir-p(IO::Path $_) {
 sub dest(*@paths) is export {
     -> Pulp::File $file {
         my Supply $stream = $file.content;
-        LEAVE $stream.tap;
-        |do for @paths -> $CWD {
+        my @ret = do for @paths -> $CWD {
             my $path    = $file.path.clone(:$CWD).IO;
             my $dir     = $path.absolute.IO.relative($*CWD).IO.dirname;
             mkdir-p $dir.IO unless $dir.IO.d;
@@ -33,6 +32,8 @@ sub dest(*@paths) is export {
             $stream    .= do: { $fd.print: $_ }
             $file.clone: :$path, :content($path.open.Supply)
         }
+        $stream.tap;
+        |@ret
     }
 }
 
