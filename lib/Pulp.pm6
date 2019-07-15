@@ -2,6 +2,7 @@ use IO::Glob;
 use Pulp::Run;
 use Pulp::File;
 
+#| Create a new Seq of virtual files from the paths
 sub src(*@paths) is export {
     gather for @paths -> $p {
         for glob($p) {
@@ -21,6 +22,7 @@ sub mkdir-p(IO::Path $_) {
     .mkdir unless .d
 }
 
+#| Set where to save the transformed files
 sub dest(*@paths) is export {
     -> Pulp::File $file {
         my Supply $stream = $file.content;
@@ -32,13 +34,15 @@ sub dest(*@paths) is export {
             $stream    .= do: { $fd.print: $_ }
             $file.clone: :$path, :content($path.open.Supply)
         }
-        $stream.tap;
+        #$stream.tap;
+        await $stream;
         |@ret
     }
 }
 
 my Pulp::Run $run .= new;
 
+#| Set what to run when what path changes
 sub watch-path(*@paths, Str :$task!) is export {
     my $watches = Supply.merge(
         |do for @paths -> $path {
@@ -51,14 +55,17 @@ sub watch-path(*@paths, Str :$task!) is export {
     @*watch.push: { :$watches, :$task }
 }
 
+#| Create a task with another name
 multi trait_mod:<is>(Sub $r, Str :$task!) is export {
     $run.add-task: $task, $r
 }
 
+#| Create a task
 multi trait_mod:<is>(Sub $r, Bool :$task! where * === True) is export {
     trait_mod:<is>($r, :task($r.name))
 }
 
+#| Create a parallel task with another name
 multi trait_mod:<is>(Sub $r, Str :$parallel-task!) is export {
     my @sub-tasks = $r.();
     $run.add-task: $parallel-task, :type<parallel>, :@sub-tasks, -> {
@@ -70,10 +77,12 @@ multi trait_mod:<is>(Sub $r, Str :$parallel-task!) is export {
     }
 }
 
+#| Create a parallel task
 multi trait_mod:<is>(Sub $r, Bool :$parallel-task! where * === True) is export {
     trait_mod:<is>($r, :parallel-task($r.name))
 }
 
+#| Create a serial task with another name
 multi trait_mod:<is>(Sub $r, Str :$serial-task!) is export {
     my @sub-tasks = $r.();
     $run.add-task: $serial-task, :type<serial>, :@sub-tasks, -> {
@@ -83,10 +92,12 @@ multi trait_mod:<is>(Sub $r, Str :$serial-task!) is export {
     }
 }
 
+#| Create a serial task
 multi trait_mod:<is>(Sub $r, Bool :$serial-task! where * === True) is export {
     trait_mod:<is>($r, :serial-task($r.name))
 }
 
+#| List all tasks
 multi MAIN(Bool :tasks(:$T)!) is export {
     say "";
     say "Tasks:";
@@ -94,6 +105,7 @@ multi MAIN(Bool :tasks(:$T)!) is export {
     say ""
 }
 
+#| Run a task
 multi MAIN(Str $task where $run.task-exists($task) = "default") is export {
     $run.events.tap: {
         note "{ .when.DateTime }: { .task } - { .type }"

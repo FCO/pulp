@@ -4,6 +4,7 @@ use Pulp;
 use Pulp::Plugin::Subst;
 use Pulp::Plugin::Rename;
 use Pulp::Plugin::JSMinify;
+use Pulp::Plugin::PodToMarkdown;
 
 sub copy-dest1-dest2 is task {
     src("src/*").map(dest("dest1", "dest2"))
@@ -34,3 +35,8 @@ sub watch is task {
 sub minify is task {
     src("js/*.js").map(js-minify()).map(dest("js.min"))
 }
+
+sub podify is task {
+    src("lib/Pulp.pm6").map(pod-to-markdown("-Ilib")).map(rename({"README.md"})).map(dest("."))
+}
+
