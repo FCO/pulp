@@ -1,4 +1,4 @@
-use IO::Glob;
+use Pulp::Glob;
 use Pulp::Run;
 use Pulp::File;
 

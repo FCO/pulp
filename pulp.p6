@@ -37,6 +37,6 @@ sub minify is task {
 }
 
 sub podify is task {
-    src("lib/Pulp.pm6").map(pod-to-markdown("-Ilib")).map(rename({"README.md"})).map(dest("."))
+    src("lib/**.pm6").map(pod-to-markdown("-Ilib")).map(rename({S/".pm6"$/.md/})).map(dest("docs"))
 }
 
