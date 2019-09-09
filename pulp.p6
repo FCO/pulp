@@ -1,5 +1,4 @@
-#!env perl6
-use lib ".";
+#!/usr/bin/env perl6
 use Pulp;
 use Pulp::Plugin::Subst;
 use Pulp::Plugin::Rename;
